@@ -1,3 +1,5 @@
+local UpvalueHacker = GLOBAL.require("upvaluehacker")
+
 Assets = {
     Asset("IMAGE", "images/equip_slot_backpack.tex"),
     Asset("ATLAS", "images/equip_slot_backpack.xml"),
@@ -33,8 +35,6 @@ end
 AddModRPCHandler("IMPROVED_INVENTORY", "UPDATE_SLOT_BIND_CONFIG", OnUpdateSlotBindRPC)
 
 if GLOBAL.TheNet:GetIsServer() then
-    local UpvalueHacker = GLOBAL.require("upvaluehacker")
-
     AddComponentPostInit("equippable", function(self, inst)
         function self:InitImprovedInventoryItem()
             if self.equipslot == GLOBAL.EQUIPSLOTS.BODY then
@@ -118,45 +118,67 @@ if GLOBAL.TheNet:GetIsServer() then
 
     AddPlayerPostInit(function(inst)
         inst:AddComponent("improved_inventory_helper")
-        local oldGetNextAvailableSlot = inst.components.inventory.GetNextAvailableSlot
-        -- 1. Preferred slot first. If the preferred slot is occupied, it's likely manually placed, so don't handle it.
-        -- 2. If all preferred slots are occupied or there is no preferred slot at all, don't occupy someone else's preferred slot. 
-        --    Try to prioritize stacking in non-preferred slots first, then use unmarked empty slots
+
+        -- According to Klei's comments, this function may be changed in future updates
+        -- local GetOverflowContainer = inst.components.inventory.GetOverflowContainer
+        function inst.components.inventory:GetOverflowContainer()
+            if self.ignoreoverflow then
+                return
+            end
+
+            local overflowContainers = {
+                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
+                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
+                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING),
+            }
+            for i, container in ipairs(overflowContainers) do
+                if container ~= nil and container.components.container ~= nil and
+                    inst.components.inventory.opencontainers[container] then
+                    return container.components.container
+                end
+            end
+        end
+
+        local GetNextAvailableSlot_old = inst.components.inventory.GetNextAvailableSlot
+        -- 1. Existing stacks first
+        -- 1. Then try preferred slot. If the preferred slot is occupied, it's likely manually placed, so don't handle it.
+        -- 3. If all preferred slots are occupied or there is no preferred slot at all. Try to find an empty slot that is not marked by other items
         -- 3. If nothing else works, use the default logic. 
         function inst.components.inventory:GetNextAvailableSlot(item)
-            local preferred_slots = inst.components.improved_inventory_helper:GetItemSlot(item.prefab)
-            if preferred_slots then
-                for _, preferred_slot in ipairs(preferred_slots) do
-                    if preferred_slot <= self.inst.components.inventory.maxslots and
-                        self.inst.components.inventory.itemslots[preferred_slot] == nil then
-                        return preferred_slot, self.itemslots
+            local slot, container = GetNextAvailableSlot_old(self, item)
+            local overflow = self:GetOverflowContainer()
+            -- not slot: is overflowed
+            -- container == self.equipslots: is in equipment bar
+            -- container == overflow: has stack or inventorybar is full
+            if not slot or ((container == self.equipslots and self.equipslots[slot]) or
+                (overflow and container == overflow and overflow.slots[slot])) then
+                return slot, container
+            end
+            if not self.itemslots[slot] then
+                local preferred_slots = inst.components.improved_inventory_helper:GetItemSlot(item.prefab)
+                if preferred_slots then
+                    for _, preferred_slot in ipairs(preferred_slots) do
+                        if preferred_slot <= self.inst.components.inventory.maxslots and
+                            not self.inst.components.inventory.itemslots[preferred_slot] then
+                            return preferred_slot, self.itemslots
+                        end
                     end
                 end
-            end
-            for k = 1, self:GetNumSlots() do
-                if not inst.components.improved_inventory_helper:IsSlotMarked(k) and self:CanTakeItemInSlot(item, k) and
-                    (not self.itemslots[k] or self.itemslots[k].prefab == item.prefab and self.itemslots[k].skinname ==
-                        item.skinname and self.itemslots[k].components.stackable and
-                        not self.itemslots[k].components.stackable:IsFull()) then
-                    return k, self.itemslots
+                for k = 1, self:GetNumSlots() do
+                    if not self.itemslots[k] and not inst.components.improved_inventory_helper:IsSlotMarked(k) and
+                        self:CanTakeItemInSlot(item, k) then
+                        return k, self.itemslots
+                    end
                 end
-            end
-            local overflow = self:GetOverflowContainer()
-            if overflow ~= nil then
-                if item.components.inventoryitem == nil or not item.components.inventoryitem.canonlygoinpocket and
-                    (not item.components.inventoryitem.canonlygoinpocketorpocketcontainers or
-                        overflow.inst.components.inventoryitem and
-                        overflow.inst.components.inventoryitem.canonlygoinpocket) then
-                    for k, v in pairs(overflow.slots) do
-                        if v.prefab == item.prefab and v.skinname == item.skinname and v.components.stackable and
-                            not v.components.stackable:IsFull() then
+                if overflow ~= nil then
+                    for k = 1, overflow:GetNumSlots() do
+                        if overflow:CanTakeItemInSlot(item, k) and not overflow.slots[k] then
                             return k, overflow
                         end
                     end
                 end
             end
-
-            return oldGetNextAvailableSlot(self, item)
+            return slot, container
         end
 
         local UseItemFromInvTile_old = inst.components.inventory.UseItemFromInvTile
@@ -261,6 +283,27 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
         else
             print("[IMPROVED INVENTORY] Can not find " .. filepath)
         end
+    end)
+
+    local function GetOverflowContainer(inst)
+        if inst.ignoreoverflow then
+            return
+        end
+        local overflowContainers = {
+            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
+            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
+            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING),
+        }
+        for i, container in ipairs(overflowContainers) do
+            if container ~= nil and container.replica.container ~= nil then
+                return container.replica.container
+            end
+        end
+    end
+
+    AddPrefabPostInit("inventory_classified", function(inst)
+        inst.GetOverflowContainer = GetOverflowContainer
+        UpvalueHacker.SetUpvalue(GLOBAL.Prefabs.inventory_classified.fn, GetOverflowContainer, "GetOverflowContainer")
     end)
 
     AddClassPostConstruct("widgets/inventorybar", function(self)
@@ -369,6 +412,8 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
             self.improved_inventory_helper_profile_switch = self.toprow:AddChild(switch_btn)
             self.improved_inventory_helper_profile_switch:SetPosition(base_position.x - 120, base_position.y, 0)
             self.improved_inventory_helper_profile_switch:Hide()
+
+            self.owner:PushEvent("improved_inventory_helper_rerender")
         end
 
         local OnUpdate_old = self.OnUpdate
@@ -390,7 +435,7 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
 
         self.owner:DoTaskInTime(0, function()
             loadLocalConfig()
-            self.owner:ListenForEvent("improved_inventory_helper_config_updated", function()
+            self.owner:ListenForEvent("improved_inventory_helper_rerender", function()
                 for i = 1, #self.inv do
                     local atlas, image = self.owner.replica.improved_inventory_helper:GetSlotConfig(i)
                     if atlas and image then

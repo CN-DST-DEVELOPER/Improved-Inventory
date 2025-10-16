@@ -1,7 +1,7 @@
 local function on_slot_item_config_change(self)
     if ThePlayer == self.inst then
         self.inst:DoTaskInTime(0, function()
-            self.inst:PushEvent("improved_inventory_helper_config_updated")
+            self.inst:PushEvent("improved_inventory_helper_rerender")
         end)
     end
 end
@@ -73,12 +73,12 @@ function ImprovedInventoryHelper_Replica:BindLocal(slot)
             self.config.item_slot_map[slot] = nil
         end
     end
-    self.inst:PushEvent("improved_inventory_helper_config_updated")
+    self.inst:PushEvent("improved_inventory_helper_rerender")
 end
 
 function ImprovedInventoryHelper_Replica:BindKey(slot, key)
     self.config.key_slot_map[slot] = key
-    self.inst:PushEvent("improved_inventory_helper_config_updated")
+    self.inst:PushEvent("improved_inventory_helper_rerender")
 end
 
 function ImprovedInventoryHelper_Replica:TriggerSlotAction(slot)

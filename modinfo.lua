@@ -15,7 +15,7 @@ Main functions:
 forumthread = ""
 author = "Fengying"
 
-version = "1.0.1"
+version = "1.0.2"
 version_compatible = "1.0.0"
 
 api_version = 10
