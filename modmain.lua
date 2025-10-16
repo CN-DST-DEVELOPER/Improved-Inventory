@@ -420,8 +420,6 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
                     config = {},
                 }
                 global_config.data[global_config.profile].config = self.owner.replica.improved_inventory_helper.config
-                GLOBAL.dumptable(global_config)
-                print(("[IMPROVED INVENTORY] Saving config to profile %d"):format(global_config.profile))
                 GLOBAL.SavePersistentString(filepath, GLOBAL.DataDumper(global_config, nil, true), false)
             end)
         end)
