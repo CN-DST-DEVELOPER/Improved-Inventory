@@ -253,6 +253,7 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
         if load_success == true then
             local success, savedata = GLOBAL.RunInSandboxSafe(str)
             if success and string.len(str) > 0 then
+                print("[IMPROVED INVENTORY] Loaded saved data successfully")
                 global_config = savedata
             else
                 print("[IMPROVED INVENTORY] Failed to load saved data")
@@ -387,39 +388,42 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
             end
         end
 
-        self.owner:ListenForEvent("improved_inventory_helper_config_updated", function()
-            for i = 1, #self.inv do
-                local atlas, image = self.owner.replica.improved_inventory_helper:GetSlotConfig(i)
-                if atlas and image then
-                    self.improved_inventory_helper_bar[i].bg:SetTexture(atlas, image)
-                    self.improved_inventory_helper_bar[i].bg:SetTint(0.95, 0.95, 0.95, 0.35)
-                    self.improved_inventory_helper_bar[i].bg:Show()
-                    self.improved_inventory_helper_bar[i].ctl.icon:SetTexture("images/locked.xml", "locked.tex")
-                else
-                    self.improved_inventory_helper_bar[i].bg:Hide()
-                    self.improved_inventory_helper_bar[i].ctl.icon:SetTexture("images/unlocked.xml", "unlocked.tex")
-                end
-                local key = self.owner.replica.improved_inventory_helper:GetKeyBind(i)
-                if key then
-                    self.improved_inventory_helper_bar[i].key:SetText(GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[1][key])
-                    self.improved_inventory_helper_bar[i].key:Show()
-                else
-                    self.improved_inventory_helper_bar[i].key:SetText(nil)
-                    if not improved_inventory_helper_shown then
-                        self.improved_inventory_helper_bar[i].key:Hide()
-                    end
-                end
-            end
-            global_config.data[global_config.profile] = global_config.data[global_config.profile] or {
-                name = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW,
-                desc = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW .. "  " .. (#global_config.data + 1),
-                config = {},
-            }
-            global_config.data[global_config.profile].config = self.owner.replica.improved_inventory_helper.config
-            GLOBAL.SavePersistentString(filepath, GLOBAL.DataDumper(global_config, nil, true), false)
-        end)
         self.owner:DoTaskInTime(0, function()
             loadLocalConfig()
+            self.owner:ListenForEvent("improved_inventory_helper_config_updated", function()
+                for i = 1, #self.inv do
+                    local atlas, image = self.owner.replica.improved_inventory_helper:GetSlotConfig(i)
+                    if atlas and image then
+                        self.improved_inventory_helper_bar[i].bg:SetTexture(atlas, image)
+                        self.improved_inventory_helper_bar[i].bg:SetTint(0.95, 0.95, 0.95, 0.35)
+                        self.improved_inventory_helper_bar[i].bg:Show()
+                        self.improved_inventory_helper_bar[i].ctl.icon:SetTexture("images/locked.xml", "locked.tex")
+                    else
+                        self.improved_inventory_helper_bar[i].bg:Hide()
+                        self.improved_inventory_helper_bar[i].ctl.icon:SetTexture("images/unlocked.xml", "unlocked.tex")
+                    end
+                    local key = self.owner.replica.improved_inventory_helper:GetKeyBind(i)
+                    if key then
+                        self.improved_inventory_helper_bar[i].key:SetText(
+                            GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[1][key])
+                        self.improved_inventory_helper_bar[i].key:Show()
+                    else
+                        self.improved_inventory_helper_bar[i].key:SetText(nil)
+                        if not improved_inventory_helper_shown then
+                            self.improved_inventory_helper_bar[i].key:Hide()
+                        end
+                    end
+                end
+                global_config.data[global_config.profile] = global_config.data[global_config.profile] or {
+                    name = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW,
+                    desc = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW .. "  " .. (#global_config.data + 1),
+                    config = {},
+                }
+                global_config.data[global_config.profile].config = self.owner.replica.improved_inventory_helper.config
+                GLOBAL.dumptable(global_config)
+                print(("[IMPROVED INVENTORY] Saving config to profile %d"):format(global_config.profile))
+                GLOBAL.SavePersistentString(filepath, GLOBAL.DataDumper(global_config, nil, true), false)
+            end)
         end)
     end)
 
