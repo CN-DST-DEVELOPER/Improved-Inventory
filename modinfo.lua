@@ -15,7 +15,7 @@ Main functions:
 forumthread = ""
 author = "Fengying"
 
-version = "1.0.2"
+version = "1.0.3"
 version_compatible = "1.0.0"
 
 api_version = 10
@@ -31,42 +31,76 @@ priority = 0
 icon_atlas = "preview.xml"
 icon = "preview.tex"
 
-configuration_options = {
-    {
-        name = "key_toggle_bind",
-        label = "设置热键\nToggle Setting View",
-        options = {
-            {description = "F1", data = 282},
-            {description = "F2", data = 283},
-            {description = "F3", data = 284},
-            {description = "F4", data = 285},
-            {description = "F5", data = 286},
-            {description = "F6", data = 287},
-            {description = "F7", data = 288},
-            {description = "F8", data = 289},
-            {description = "F9", data = 290},
-            {description = "F10", data = 291},
-            {description = "F11", data = 292},
-            {description = "F12", data = 293},
-        },
-        default = 288,
-    },
-    {
-        name = "alert_stack_threshold",
-        label = "物品少于多少的时候报警？\nRaise alert when stack size is below",
-        options = {
-            {description = "100%", data = 1},
-            {description = "75%", data = .75},
-            {description = "50%", data = .5},
-            {description = "25%", data = .25},
-            {description = "Never", data = 0},
-        },
-        default = 0,
-    },
-    {
-        name = "disable_raw_inventory_hotkey",
-        label = "禁用原版物品栏热键\nDisable raw inventory hotkey",
-        options = {{description = "no", data = false}, {description = "yes", data = true}},
-        default = true,
-    },
-}
+configuration_options = {{
+    name = "key_toggle_bind",
+    label = "设置热键\nToggle Setting View",
+    options = {{
+        description = "F1",
+        data = 282
+    }, {
+        description = "F2",
+        data = 283
+    }, {
+        description = "F3",
+        data = 284
+    }, {
+        description = "F4",
+        data = 285
+    }, {
+        description = "F5",
+        data = 286
+    }, {
+        description = "F6",
+        data = 287
+    }, {
+        description = "F7",
+        data = 288
+    }, {
+        description = "F8",
+        data = 289
+    }, {
+        description = "F9",
+        data = 290
+    }, {
+        description = "F10",
+        data = 291
+    }, {
+        description = "F11",
+        data = 292
+    }, {
+        description = "F12",
+        data = 293
+    }},
+    default = 288
+}, {
+    name = "alert_stack_threshold",
+    label = "物品少于多少的时候报警？\nRaise alert when stack size is below",
+    options = {{
+        description = "100%",
+        data = 1
+    }, {
+        description = "75%",
+        data = .75
+    }, {
+        description = "50%",
+        data = .5
+    }, {
+        description = "25%",
+        data = .25
+    }, {
+        description = "Never",
+        data = 0
+    }},
+    default = 0
+}, {
+    name = "disable_raw_inventory_hotkey",
+    label = "禁用原版物品栏热键\nDisable raw inventory hotkey",
+    options = {{
+        description = "no",
+        data = false
+    }, {
+        description = "yes",
+        data = true
+    }},
+    default = true
+}}

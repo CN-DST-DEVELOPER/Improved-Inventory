@@ -1,25 +1,25 @@
 local UpvalueHacker = GLOBAL.require("upvaluehacker")
 
-Assets = {
-    Asset("IMAGE", "images/equip_slot_backpack.tex"),
-    Asset("ATLAS", "images/equip_slot_backpack.xml"),
-    Asset("IMAGE", "images/equip_slot_cloth.tex"),
-    Asset("ATLAS", "images/equip_slot_cloth.xml"),
-    Asset("IMAGE", "images/equip_slot_neck.tex"),
-    Asset("ATLAS", "images/equip_slot_neck.xml"),
-    Asset("IMAGE", "images/equip_slot_error_bd.tex"),
-    Asset("ATLAS", "images/equip_slot_error_bd.xml"),
-    Asset("IMAGE", "images/locked.tex"),
-    Asset("ATLAS", "images/locked.xml"),
-    Asset("IMAGE", "images/unlocked.tex"),
-    Asset("ATLAS", "images/unlocked.xml"),
-    Asset("IMAGE", "images/setting.tex"),
-    Asset("ATLAS", "images/setting.xml"),
+Assets = {Asset("IMAGE", "images/equip_slot_backpack.tex"), Asset("ATLAS", "images/equip_slot_backpack.xml"),
+          Asset("IMAGE", "images/equip_slot_cloth.tex"), Asset("ATLAS", "images/equip_slot_cloth.xml"),
+          Asset("IMAGE", "images/equip_slot_neck.tex"), Asset("ATLAS", "images/equip_slot_neck.xml"),
+          Asset("IMAGE", "images/equip_slot_error_bd.tex"), Asset("ATLAS", "images/equip_slot_error_bd.xml"),
+          Asset("IMAGE", "images/locked.tex"), Asset("ATLAS", "images/locked.xml"),
+          Asset("IMAGE", "images/unlocked.tex"), Asset("ATLAS", "images/unlocked.xml"),
+          Asset("IMAGE", "images/setting.tex"), Asset("ATLAS", "images/setting.xml")}
+
+local BASE_EQUIPSLOTS = {
+    HANDS = "hands",
+    BODY = "body",
+    HEAD = "head",
+    BEARD = "beard"
 }
 
-local BASE_EQUIPSLOTS = {HANDS = "hands", BODY = "body", HEAD = "head", BEARD = "beard"}
-
-local ADDITIONAL_EQUIPSLOTS = {CLOTHING = "clothing", BACKPACK = "backpack", NECK = "neck"}
+local ADDITIONAL_EQUIPSLOTS = {
+    CLOTHING = "clothing",
+    BACKPACK = "backpack",
+    NECK = "neck"
+}
 
 GLOBAL.EQUIPSLOTS = GLOBAL.MergeMaps(BASE_EQUIPSLOTS, ADDITIONAL_EQUIPSLOTS)
 local AMULET_LIST = {"amulet", "blueamulet", "purpleamulet", "orangeamulet", "greenamulet", "yellowamulet"}
@@ -55,7 +55,8 @@ if GLOBAL.TheNet:GetIsServer() then
             end
         end
 
-        inst:DoTaskInTime(0, function() -- in case some prefabs add equippable component conditionally
+        inst:DoTaskInTime(0, function()
+            -- in case some prefabs add equippable component conditionally
             self:InitImprovedInventoryItem()
         end)
     end)
@@ -98,7 +99,7 @@ if GLOBAL.TheNet:GetIsServer() then
                 else
                     GLOBAL.rawset(t, k, v)
                 end
-            end,
+            end
         })
         GLOBAL.rawset(self, "equipslots", equipslots)
     end)
@@ -126,11 +127,9 @@ if GLOBAL.TheNet:GetIsServer() then
                 return
             end
 
-            local overflowContainers = {
-                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
-                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
-                self:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING),
-            }
+            local overflowContainers = {self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
+                                        self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
+                                        self:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING)}
             for i, container in ipairs(overflowContainers) do
                 if container ~= nil and container.components.container ~= nil and
                     inst.components.inventory.opencontainers[container] then
@@ -143,7 +142,7 @@ if GLOBAL.TheNet:GetIsServer() then
         -- 1. Existing stacks first
         -- 1. Then try preferred slot. If the preferred slot is occupied, it's likely manually placed, so don't handle it.
         -- 3. If all preferred slots are occupied or there is no preferred slot at all. Try to find an empty slot that is not marked by other items
-        -- 3. If nothing else works, use the default logic. 
+        -- 3. If nothing else works, use the default logic.
         function inst.components.inventory:GetNextAvailableSlot(item)
             local slot, container = GetNextAvailableSlot_old(self, item)
             local overflow = self:GetOverflowContainer()
@@ -212,7 +211,7 @@ end
 if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
     local BIND_KEY = GetModConfigData("key_toggle_bind") or 288
     local alert_stack_threshold = GetModConfigData("alert_stack_threshold") or 0
-    local disable_raw_inventory_hotkey = GetModConfigData("disable_raw_inventory_hotkey") or 0
+    local disable_raw_inventory_hotkey = GetModConfigData("disable_raw_inventory_hotkey") or false
 
     local Image = require("widgets/image")
     local TEMPLATES = require "widgets/redux/templates"
@@ -221,25 +220,21 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
 
     local showBindKeyScreen = function(current_key, callback)
         local default_text = string.format(GLOBAL.STRINGS.UI.OPTIONS.CURRENT_CONTROL_TEXT, GLOBAL.STRINGS.UI
-                                               .CONTROLSSCREEN.INPUTS[1][current_key] or
-                                               GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[9][2])
+            .CONTROLSSCREEN.INPUTS[1][current_key] or GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[9][2])
         local body_text = GLOBAL.STRINGS.UI.CONTROLSSCREEN.CONTROL_SELECT .. "\n\n" .. default_text
 
-        local buttons = {
-            {
-                text = GLOBAL.STRINGS.UI.CONTROLSSCREEN.UNBIND,
-                cb = function()
-                    callback(nil)
-                    GLOBAL.TheFrontEnd:PopScreen()
-                end,
-            },
-            {
-                text = GLOBAL.STRINGS.UI.CONTROLSSCREEN.CANCEL,
-                cb = function()
-                    GLOBAL.TheFrontEnd:PopScreen()
-                end,
-            },
-        }
+        local buttons = {{
+            text = GLOBAL.STRINGS.UI.CONTROLSSCREEN.UNBIND,
+            cb = function()
+                callback(nil)
+                GLOBAL.TheFrontEnd:PopScreen()
+            end
+        }, {
+            text = GLOBAL.STRINGS.UI.CONTROLSSCREEN.CANCEL,
+            cb = function()
+                GLOBAL.TheFrontEnd:PopScreen()
+            end
+        }}
 
         local popup = PopupDialogScreen(GLOBAL.STRINGS.UI.CONTROLSSCREEN.RESETTITLE, body_text, buttons)
 
@@ -261,15 +256,8 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
     local filepath = "mod_config_data/improved_inventory_helper_config"
     local improved_inventory_helper_shown = false
     local global_config = {
-        data = {
-            -- [1] = {
-            --     name="",
-            --     desc="",
-            --     config={}
-            -- },
-            -- [2] = ...
-        },
-        profile = 1,
+        data = {},
+        profile = 1
     }
     GLOBAL.TheSim:GetPersistentString(filepath, function(load_success, str)
         if load_success == true then
@@ -289,11 +277,9 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
         if inst.ignoreoverflow then
             return
         end
-        local overflowContainers = {
-            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
-            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
-            inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING),
-        }
+        local overflowContainers = {inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACKPACK),
+                                    inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY),
+                                    inst:GetEquippedItem(GLOBAL.EQUIPSLOTS.CLOTHING)}
         for i, container in ipairs(overflowContainers) do
             if container ~= nil and container.replica.container ~= nil then
                 return container.replica.container
@@ -368,31 +354,35 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
                 end
 
                 self.improved_inventory_helper_bar[i].bd = inv_slot:AddChild(
-                                                               Image("images/equip_slot_error_bd.xml",
-                                                                     "equip_slot_error_bd.tex"))
+                    Image("images/equip_slot_error_bd.xml", "equip_slot_error_bd.tex"))
                 self.improved_inventory_helper_bar[i].bd:Hide()
 
                 local inv_slot_position = inv_slot:GetPosition()
 
-                local key_btn = TEMPLATES.StandardButton(function()
-                    if improved_inventory_helper_shown then
-                        showBindKeyScreen(self.owner.replica.improved_inventory_helper.config.key_slot_map[i],
-                                          function(new_key)
-                            self.owner.replica.improved_inventory_helper:BindKey(i, new_key)
-                        end)
+                local ctl_y = 90
+                if disable_raw_inventory_hotkey then
+                    local key_btn = TEMPLATES.StandardButton(function()
+                        if improved_inventory_helper_shown then
+                            showBindKeyScreen(self.owner.replica.improved_inventory_helper.config.key_slot_map[i],
+                                function(new_key)
+                                    self.owner.replica.improved_inventory_helper:BindKey(i, new_key)
+                                end)
+                        end
+                    end, nil, {70, 70})
+                    self.improved_inventory_helper_bar[i].key = self.toprow:AddChild(key_btn)
+                    self.improved_inventory_helper_bar[i].key:SetPosition(inv_slot_position.x,
+                        inv_slot_position.y + ctl_y, 0)
+                    if not improved_inventory_helper_shown then
+                        self.improved_inventory_helper_bar[i].key:Hide()
                     end
-                end, nil, {70, 70})
-                self.improved_inventory_helper_bar[i].key = self.toprow:AddChild(key_btn)
-                self.improved_inventory_helper_bar[i].key:SetPosition(inv_slot_position.x, inv_slot_position.y + 90, 0)
-                if not improved_inventory_helper_shown then
-                    self.improved_inventory_helper_bar[i].key:Hide()
+                    ctl_y = 160
                 end
-
                 local ctl_btn = TEMPLATES.StandardButton(function()
                     self.owner.replica.improved_inventory_helper:BindLocal(i)
                 end, nil, {70, 70}, {"images/unlocked.xml", "unlocked.tex"})
                 self.improved_inventory_helper_bar[i].ctl = self.toprow:AddChild(ctl_btn)
-                self.improved_inventory_helper_bar[i].ctl:SetPosition(inv_slot_position.x, inv_slot_position.y + 160, 0)
+                self.improved_inventory_helper_bar[i].ctl:SetPosition(inv_slot_position.x, inv_slot_position.y + ctl_y,
+                    0)
                 if not improved_inventory_helper_shown then
                     self.improved_inventory_helper_bar[i].ctl:Hide()
                 end
@@ -447,22 +437,24 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
                         self.improved_inventory_helper_bar[i].bg:Hide()
                         self.improved_inventory_helper_bar[i].ctl.icon:SetTexture("images/unlocked.xml", "unlocked.tex")
                     end
-                    local key = self.owner.replica.improved_inventory_helper:GetKeyBind(i)
-                    if key then
-                        self.improved_inventory_helper_bar[i].key:SetText(
-                            GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[1][key])
-                        self.improved_inventory_helper_bar[i].key:Show()
-                    else
-                        self.improved_inventory_helper_bar[i].key:SetText(nil)
-                        if not improved_inventory_helper_shown then
-                            self.improved_inventory_helper_bar[i].key:Hide()
+                    if disable_raw_inventory_hotkey then
+                        local key = self.owner.replica.improved_inventory_helper:GetKeyBind(i)
+                        if key then
+                            self.improved_inventory_helper_bar[i].key:SetText(
+                                GLOBAL.STRINGS.UI.CONTROLSSCREEN.INPUTS[1][key])
+                            self.improved_inventory_helper_bar[i].key:Show()
+                        else
+                            self.improved_inventory_helper_bar[i].key:SetText(nil)
+                            if not improved_inventory_helper_shown then
+                                self.improved_inventory_helper_bar[i].key:Hide()
+                            end
                         end
                     end
                 end
                 global_config.data[global_config.profile] = global_config.data[global_config.profile] or {
                     name = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW,
                     desc = GLOBAL.STRINGS.UI.COLLECTIONSCREEN.NEW .. "  " .. (#global_config.data + 1),
-                    config = {},
+                    config = {}
                 }
                 global_config.data[global_config.profile].config = self.owner.replica.improved_inventory_helper.config
                 GLOBAL.SavePersistentString(filepath, GLOBAL.DataDumper(global_config, nil, true), false)
@@ -477,7 +469,7 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
                 if improved_inventory_helper_shown then
                     for i, helper in ipairs(GLOBAL.ThePlayer.HUD.controls.inv.improved_inventory_helper_bar) do
                         helper.ctl:Hide()
-                        if not GLOBAL.ThePlayer.replica.improved_inventory_helper:GetKeyBind(i) then
+                        if not GLOBAL.ThePlayer.replica.improved_inventory_helper:GetKeyBind(i) and helper.key then
                             helper.key:Hide()
                         end
                     end
@@ -487,12 +479,14 @@ if GLOBAL.TheNet:GetIsClient() or not GLOBAL.TheNet:GetServerIsDedicated() then
                 else
                     for _, helper in ipairs(GLOBAL.ThePlayer.HUD.controls.inv.improved_inventory_helper_bar) do
                         helper.ctl:Show()
-                        helper.key:Show()
+                        if helper.key then
+                            helper.key:Show()
+                        end
                     end
                     GLOBAL.ThePlayer.HUD.controls.inv.improved_inventory_helper_profile_switch:Show()
                     improved_inventory_helper_shown = true
                 end
-            else
+            elseif disable_raw_inventory_hotkey then
                 local inv = GLOBAL.ThePlayer.HUD.controls.inv
                 for i = 1, #inv.inv do
                     if key == inv.owner.replica.improved_inventory_helper:GetKeyBind(i) then
